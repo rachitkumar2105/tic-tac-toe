@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tic Tac Toe</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1 style="text-align:center;">Tic Tac Toe</h1>
+
+<div id="menu">
+  <div id="main-options">
+    <button onclick="openPVPSetup()">Player vs Player</button>
+    <button onclick="openAISetup()">Player vs AI</button>
+    <button onclick="openTournamentSetup()">Tournament</button>
+  </div>
+
+  <div id="pvp-setup" class="hidden setup">
+    <h3>Player vs Player</h3>
+    <label>Player 1: <input id="pvp_p1" class="name-input" placeholder="Player 1"></label><br>
+    <label>Player 2: <input id="pvp_p2" class="name-input" placeholder="Player 2"></label><br>
+    <div style="margin-top:8px;">
+      <button onclick="startPVPFromForm()">Start</button>
+      <button onclick="closePVPSetup()">Go Back</button>
+    </div>
+  </div>
+
+  <div id="ai-setup" class="hidden setup">
+    <h3>Player vs AI</h3>
+    <label>Your Name: <input id="ai_name" class="name-input" placeholder="You"></label><br>
+    <div style="margin-top:6px;">
+      <strong>Difficulty:</strong><br>
+      <label><input type="radio" name="aiLevel" value="easy"> Easy</label>
+      <label><input type="radio" name="aiLevel" value="medium"> Medium</label>
+      <label><input type="radio" name="aiLevel" value="hard" checked> Hard</label>
+    </div>
+    <div style="margin-top:8px;">
+      <button onclick="startAIFromForm()">Start</button>
+      <button onclick="closeAISetup()">Go Back</button>
+    </div>
+  </div>
+
+  <div id="tournament-setup" class="hidden setup">
+    <h3>Tournament Setup</h3>
+    <label>Player 1: <input id="p1name" class="name-input" placeholder="Player 1"></label><br>
+    <label>Player 2: <input id="p2name" class="name-input" placeholder="Player 2"></label><br>
+
+    <div style="margin-top:12px;">
+      <strong>Rounds:</strong><br><br>
+      <label style="display:inline-flex; gap:8px; align-items:center; margin-right:16px;">
+        <input type="radio" name="rounds" value="3" checked> <span>3</span>
+      </label>
+      <label style="display:inline-flex; gap:8px; align-items:center; margin-right:16px;">
+        <input type="radio" name="rounds" value="4"> <span>4</span>
+      </label>
+      <label style="display:inline-flex; gap:8px; align-items:center; margin-right:16px;">
+        <input type="radio" name="rounds" value="5"> <span>5</span>
+      </label>
+      <label style="display:inline-flex; gap:8px; align-items:center;">
+        <input type="radio" name="rounds" value="custom"> <span>Custom</span>
+      </label>
+      <select id="customRounds" class="hidden" style="display:block; width:100%; margin-top:8px; padding:8px; border:none; border-radius:6px;">
+        <option>2</option><option>3</option><option>4</option><option>5</option>
+        <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+      </select>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button onclick="startTournament()">Start Tournament</button>
+      <button onclick="closeTournamentSetup()">Go Back</button>
+    </div>
+  </div>
+</div>
+
+<div id="game" class="hidden">
+  <div id="gameWrapper">
+    <!-- Scoreboard sidebar (left on desktop, top on mobile) -->
+    <aside id="scoreboardSidebar" class="hidden">
+      <div id="scoreboardHeader">Score</div>
+      <div id="p1ScoreCard" class="scoreCard">
+        <div class="playerName" id="p1Name"></div>
+        <div class="playerSymbol" id="p1Sym"></div>
+        <div class="playerScore" id="p1Score">0</div>
+      </div>
+      <div id="timerBox">
+        <span id="timer">⏱️ 15</span>
+      </div>
+      <div id="p2ScoreCard" class="scoreCard">
+        <div class="playerName" id="p2Name"></div>
+        <div class="playerSymbol" id="p2Sym"></div>
+        <div class="playerScore" id="p2Score">0</div>
+      </div>
+    </aside>
+
+    <main id="gameMain">
+      <!-- Player header for PVP -->
+      <div id="playerHeader" class="hidden">
+        <div id="p1header"></div>
+        <div id="p2header"></div>
+      </div>
+
+      <div id="turn"></div>
+      <div id="roundInfo" class="small"></div>
+
+      <div id="board"></div>
+
+      <div id="message"></div>
+
+      <div class="controls">
+        <button id="playAgainBtn" onclick="playAgain()">Play Again</button>
+        <button id="goBackBtn" onclick="goBack()">Go Back</button>
+      </div>
+    </main>
+
+    <!-- Probability panel (right side - visible in all modes) -->
+    <aside id="probabilityPanel" class="hidden">
+      <div class="probTitle">Win Probability</div>
+
+      <div class="probComparison">
+        <!-- Player 1 Bar -->
+        <div class="probPlayerBox">
+          <div class="probPlayerHeader">
+            <div class="probPlayerName" id="prob1Name">Player 1</div>
+            <div class="probPercent" id="prob1Percent">50%</div>
+          </div>
+          <div class="probBarContainer">
+            <div class="probBar" id="prob1Bar">
+              <div class="probFill prob1Fill" id="prob1Fill" style="width:50%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Player 2 Bar -->
+        <div class="probPlayerBox">
+          <div class="probPlayerHeader">
+            <div class="probPlayerName" id="prob2Name">Player 2</div>
+            <div class="probPercent" id="prob2Percent">50%</div>
+          </div>
+          <div class="probBarContainer">
+            <div class="probBar" id="prob2Bar">
+              <div class="probFill prob2Fill" id="prob2Fill" style="width:50%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Confetti animation container -->
+<div id="confetti"></div>
+
+<!-- Overlay for "Starting Round N" countdown -->
+<div id="overlay" class="hidden">
+  <div id="overlayBox">
+    <div id="overlayText">Starting Round</div>
+    <div id="overlayCount">3</div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

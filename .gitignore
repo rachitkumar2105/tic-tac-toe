@@ -1,0 +1,39 @@
+# Maven / Spring Boot
+target/
+build/
+
+# Maven Wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# Compiled files
+*.class
+*.log
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+
+# Eclipse / STS
+.project
+.classpath
+.settings/
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# OS files
+.DS_Store
+
+# Environment
+.env

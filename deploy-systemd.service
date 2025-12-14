@@ -1,0 +1,14 @@
+[Unit]
+Description=TicTacToe Spring Boot
+After=network.target
+
+[Service]
+User=YOUR_USER
+WorkingDirectory=/opt/tictactoe
+ExecStart=/usr/bin/java -jar /opt/tictactoe/tictactoe-1.0.0.jar
+SuccessExitStatus=143
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
