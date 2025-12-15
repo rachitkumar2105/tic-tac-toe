@@ -20,7 +20,7 @@ body {
 
 h1 {
   margin:18px 0;
-  font-size:34px;
+  font-size:43px;
   color:#ff8c00;
   text-shadow:none;
   font-weight:700;
@@ -800,7 +800,7 @@ h1 {
     flex-direction:column;
     gap:16px;
     align-items:center;
-    padding:16px;
+    padding:10px;
   }
 
   #gameMain {
@@ -816,8 +816,8 @@ h1 {
   #main-options {
     flex-direction:column;
     align-items:stretch;
-    gap:12px;
-    margin:40px 0;
+    gap:16px;
+    margin:44px 0;
   }
 
   #main-options button {
@@ -830,7 +830,7 @@ h1 {
     min-width:100%;
     flex-direction:row;
     gap:12px;
-    padding:14px;
+    padding:10px;
     max-width:420px;
     justify-content:center;
     flex-wrap:wrap;
@@ -851,31 +851,39 @@ h1 {
   }
 
   #playerHeader { gap:30px; }
-  #board { grid-template-columns:repeat(3, 90px); gap:10px; margin:18px 0 14px 0; }
-  .cell { width:90px; height:90px; font-size:38px; }
-  h1 { font-size:2.1em; margin:16px 0; }
+  #board { grid-template-columns:repeat(3, 1fr); gap:10px; margin:10px 0 8px 0; width:100%; max-width:320px; }
+  .cell { width:100%; height:78px; font-size:36px; }
+  h1 { font-size:2.625em; margin:14px 0; }
+
+  #turn { margin:10px 0 6px 0; }
+  #message { margin:12px 0; }
+  .controls { margin-top:16px; padding-bottom:14px; }
 
   #pvp-setup, #ai-setup, #tournament-setup {
-    padding:26px 18px;
+    padding:18px 14px;
     border-radius:18px;
   }
 
   #pvp-setup h3, #ai-setup h3, #tournament-setup h3 {
     font-size:24px;
-    margin-bottom:18px;
+    margin-bottom:12px;
   }
 
   #pvp-setup label, #ai-setup label, #tournament-setup label {
-    margin:12px 0 8px 0;
+    margin:8px 0 6px 0;
   }
 
   #pvp-setup strong, #ai-setup strong, #tournament-setup strong {
-    margin:14px 0 10px 0;
+    margin:10px 0 8px 0;
   }
 
   .tournament-info {
     margin:10px 0;
-    padding:10px 12px;
+    padding:8px 10px;
+  }
+
+  .tournament-info li {
+    margin-bottom:2px;
   }
 
   #pvp-setup label[style*="display:inline"], #ai-setup label[style*="display:inline"], #tournament-setup label[style*="display:inline"] {
@@ -884,22 +892,22 @@ h1 {
 }
 
 @media (max-width:480px){
-  h1 { font-size:1.5em; margin:14px 0; }
+  h1 { font-size:1.875em; margin:12px 0; }
   #main-options {
     flex-direction:column;
     align-items:stretch;
-    gap:12px;
+    gap:16px;
     margin:40px 0;
   }
   #main-options button {
     width:100%;
     max-width:360px;
     margin:0 auto;
-    padding:14px 28px;
-    font-size:12px;
+    padding:16px 28px;
+    font-size:13px;
   }
   #playerHeader { gap:20px; font-size:15px; }
-  #board { grid-template-columns:repeat(3, 75px); gap:8px; margin:14px 0 10px 0; }
+  #board { grid-template-columns:repeat(3, 75px); gap:8px; margin:10px 0 8px 0; }
   .cell { width:75px; height:75px; font-size:30px; }
   .controls button { padding:12px 24px; font-size:11px; }
   #message { font-size:16px; }

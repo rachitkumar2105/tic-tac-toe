@@ -5,6 +5,7 @@ let vsAI = false;
 let p1 = "Player 1", p2 = "Player 2";
 let score1 = 0, score2 = 0;
 let totalRounds = 1, currentRound = 1;
+// For PVP/Tournament: `starter` is Player 1's symbol for the current round (X or O).
 let starter = 'X';
 let aiLevel = "hard";
 let playerSymbol = 'X';  // Track player's symbol in AI mode
@@ -46,16 +47,41 @@ function isBoardFull(b) {
   return b.every(c => c !== " ");
 }
 
+function getP1Symbol() {
+  return starter === 'O' ? 'O' : 'X';
+}
+
+function getP2Symbol() {
+  return getP1Symbol() === 'X' ? 'O' : 'X';
+}
+
 function getPlayerNameForSymbol(sym) {
   if (mode === "ai") {
     return (sym === playerSymbol) ? p1 : p2;
   }
-  if (mode === "tournament") {
-    const p1sym = starter === 'X' ? 'X' : 'O';
-    const p2sym = starter === 'X' ? 'O' : 'X';
+  if (mode === "tournament" || mode === "pvp") {
+    const p1sym = getP1Symbol();
     return (sym === p1sym) ? p1 : p2;
   }
   return sym === 'X' ? p1 : p2;
+}
+
+function advanceSymbolAssignmentForNextRound() {
+  if (mode === "tournament") {
+    starter = getP1Symbol() === 'X' ? 'O' : 'X';
+    return;
+  }
+
+  if (mode === "pvp") {
+    starter = getP1Symbol() === 'X' ? 'O' : 'X';
+    return;
+  }
+
+  if (mode === "ai") {
+    const tmp = playerSymbol;
+    playerSymbol = aiSymbol;
+    aiSymbol = tmp;
+  }
 }
 
 function maybeStartOrResetMoveTimer() {
@@ -98,6 +124,7 @@ function startPVPFromForm(){
   score1 = score2 = 0;
   mode = "pvp";
   vsAI = false;
+  starter = 'X';
   closePVPSetup();
   initRound();
 }
@@ -121,10 +148,10 @@ function startAIFromForm(){
   mode = "ai";
   vsAI = true;
 
-  // X always starts in Tic-Tac-Toe. We only alternate whether the human is X or O.
-  playerSymbol = aiHumanIsX ? 'X' : 'O';
-  aiSymbol = (playerSymbol === 'X') ? 'O' : 'X';
-  aiHumanIsX = !aiHumanIsX;
+  // First match starts with Human as X, then swaps on every "Play Again".
+  playerSymbol = 'X';
+  aiSymbol = 'O';
+  aiHumanIsX = true;
   starter = 'X';
   
   if (!Number.isFinite(score1)) { score1 = 0; score2 = 0; }
@@ -156,10 +183,11 @@ function hideAllSetups(){
 
 function initRound(){
   board = [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '];
-  turn = starter; // Use the current starter (X or O)
+  // X always plays first
+  turn = 'X';
   hasStartedMoveTimerThisRound = false;
-  timerEnabled = false;
-  setTimerVisibility(false);
+  timerEnabled = (mode === 'ai');
+  setTimerVisibility(timerEnabled);
   stopTimer();
   resetTimerDisplay();
   
@@ -172,6 +200,10 @@ function initRound(){
     draw();
     updateScoreboardDisplay();
     updateRoundInfo();
+
+    if (mode === 'ai') {
+      maybeStartOrResetMoveTimer();
+    }
 
     if (vsAI && turn !== playerSymbol) {
       disableBoard();
@@ -226,18 +258,14 @@ function applyHorizontalProb(px, po){
   // Map X and O to players based on current game state
   let nameX, nameO;
   
-  if (mode === "tournament") {
-    // Tournament mode: use starter to determine who plays X
-    nameX = starter === 'X' ? p1 : p2;
-    nameO = starter === 'X' ? p2 : p1;
+  if (mode === "tournament" || mode === "pvp") {
+    const p1sym = getP1Symbol();
+    nameX = (p1sym === 'X') ? p1 : p2;
+    nameO = (p1sym === 'X') ? p2 : p1;
   } else if (mode === "ai") {
     // AI mode: map names to the actual X/O assignment
     nameX = (playerSymbol === 'X') ? p1 : p2;
     nameO = (playerSymbol === 'O') ? p1 : p2;
-  } else if (mode === "pvp") {
-    // PVP mode: p1 is X, p2 is O
-    nameX = p1;
-    nameO = p2;
   } else {
     nameX = "Player 1";
     nameO = "Player 2";
@@ -258,17 +286,17 @@ function applyHorizontalProb(px, po){
 
 function updatePlayerHeader(){
   // PVP mode: show names with symbols above board
-  document.getElementById("p1header").textContent = `${p1} : X`;
-  document.getElementById("p2header").textContent = `${p2} : O`;
+  document.getElementById("p1header").textContent = `${p1} : ${getP1Symbol()}`;
+  document.getElementById("p2header").textContent = `${p2} : ${getP2Symbol()}`;
 }
 
 function updateScoreboardDisplay(){
   document.getElementById("p1Name").textContent = p1;
   document.getElementById("p2Name").textContent = p2;
   
-  if (mode === "tournament") {
-    const p1sym = starter === 'X' ? 'X' : 'O';
-    const p2sym = starter === 'X' ? 'O' : 'X';
+  if (mode === "tournament" || mode === "pvp") {
+    const p1sym = getP1Symbol();
+    const p2sym = getP2Symbol();
     document.getElementById("p1Sym").textContent = `Symbol: ${p1sym}`;
     document.getElementById("p2Sym").textContent = `Symbol: ${p2sym}`;
   } else if (mode === "ai") {
@@ -339,7 +367,7 @@ function draw(){
     d.onclick=()=>move(i);
     boardDiv.appendChild(d);
   });
-  turnDiv.innerText=`Turn: ${turn}`;
+  turnDiv.innerText=`Turn: ${getPlayerNameForSymbol(turn)}`;
 }
 
 function move(i) {
@@ -511,14 +539,15 @@ function handleRoundEnd(winnerSymbol){
     msg.textContent = `${winnerName} wins!`;
 
     if (mode === 'tournament') {
-      const p1sym = starter === 'X' ? 'X' : 'O';
+      const p1sym = getP1Symbol();
       if (winnerSymbol === p1sym) score1 += 2;
       else score2 += 2;
     } else if (mode === 'ai') {
       if (winnerSymbol === playerSymbol) score1 += 2;
       else score2 += 2;
     } else {
-      if (winnerSymbol === 'X') score1 += 2;
+      const p1sym = getP1Symbol();
+      if (winnerSymbol === p1sym) score1 += 2;
       else score2 += 2;
     }
   } else {
@@ -536,7 +565,7 @@ function handleRoundEnd(winnerSymbol){
     const isLastRound = currentRound >= totalRounds;
     if (!isLastRound) {
       currentRound++;
-      starter = starter === 'X' ? 'O' : 'X';
+      advanceSymbolAssignmentForNextRound();
       setTimeout(() => {
         initRound();
       }, 1200);
@@ -586,9 +615,11 @@ function playAgain(){
     return;
   }
 
+  advanceSymbolAssignmentForNextRound();
+
   showOverlayCountdown("Starting...", 3, () => {
     board = Array(9).fill(" ");
-    turn = starter;
+    turn = 'X';
     msg.innerText = "";
     enableBoard();
     stopTimer();
