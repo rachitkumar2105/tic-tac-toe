@@ -168,22 +168,25 @@ function initRound(){
   document.getElementById('scoreboardSidebar').classList.remove('hidden');
   document.getElementById('playerHeader').classList.add('hidden');
   
-  // Show countdown before starting the round
-  showOverlayCountdown(`Round ${currentRound}`, 3, () => {
+  const startRoundCore = () => {
     draw();
     updateScoreboardDisplay();
     updateRoundInfo();
-    
-    // If it's AI's turn to start
+
     if (vsAI && turn !== playerSymbol) {
       disableBoard();
-      // Small delay for better UX
       setTimeout(() => {
         aiMove();
         enableBoard();
       }, 500);
     }
-  });
+  };
+
+  if (mode === 'tournament' && currentRound > 1) {
+    showOverlayCountdown(`Round ${currentRound}`, 3, startRoundCore);
+  } else {
+    startRoundCore();
+  }
 }
 
 function updateProbPanel() {
@@ -503,63 +506,49 @@ function handleRoundEnd(winnerSymbol){
   stopTimer();
   disableBoard();
   
-  if (winnerSymbol === 'X') {
-    if (mode === 'ai') {
-      if (playerSymbol === 'X') score1 += 2;
-      else score2 += 2;
-    } else if (mode === 'tournament') {
-      const p1sym = starter === 'X' ? 'X' : 'O';
-      if (p1sym === 'X') score1 += 2;
-      else score2 += 2;
-    } else {
-      score1 += 1;
-    }
-    msg.textContent = `${getPlayerNameForSymbol('X')} wins!`;
-  } else if (winnerSymbol === 'O') {
-    if (mode === 'ai') {
-      if (playerSymbol === 'O') score1 += 2;
-      else score2 += 2;
-    } else if (mode === 'tournament') {
-      const p1sym = starter === 'X' ? 'X' : 'O';
-      if (p1sym === 'O') score1 += 2;
-      else score2 += 2;
-    } else {
-      score2 += 1;
-    }
-    msg.textContent = `${getPlayerNameForSymbol('O')} wins!`;
-  } else {
+  if (winnerSymbol === 'X' || winnerSymbol === 'O') {
+    const winnerName = getPlayerNameForSymbol(winnerSymbol);
+    msg.textContent = `${winnerName} wins!`;
+
     if (mode === 'tournament') {
+      const p1sym = starter === 'X' ? 'X' : 'O';
+      if (winnerSymbol === p1sym) score1 += 2;
+      else score2 += 2;
+    } else if (mode === 'ai') {
+      if (winnerSymbol === playerSymbol) score1 += 2;
+      else score2 += 2;
+    } else {
+      if (winnerSymbol === 'X') score1 += 2;
+      else score2 += 2;
+    }
+  } else {
+    msg.textContent = "It's a draw!";
+    if (mode === 'tournament' || mode === 'ai' || mode === 'pvp') {
       score1 += 1;
       score2 += 1;
     }
-    msg.textContent = "It's a draw!";
   }
   
   updateScoreboardDisplay();
   setPlayAgainVisibility(true);
-  
-  // In tournament mode, check if we need to continue to next round
-  if (mode === 'tournament' && currentRound < totalRounds) {
-    currentRound++;
-    // Toggle starter for next round
-    starter = starter === 'X' ? 'O' : 'X';
-    
-    // Show countdown before next round
-    setTimeout(() => {
-      showOverlayCountdown(`Round ${currentRound} starting...`, 3, () => {
-        initRound();
-      });
-    }, 2000);
-  }
 
-  if (mode === 'tournament' && currentRound >= totalRounds) {
-    setPlayAgainVisibility(false);
-    if (score1 > score2) {
-      msg.textContent = `${p1} wins the tournament!`;
-    } else if (score2 > score1) {
-      msg.textContent = `${p2} wins the tournament!`;
+  if (mode === 'tournament') {
+    const isLastRound = currentRound >= totalRounds;
+    if (!isLastRound) {
+      currentRound++;
+      starter = starter === 'X' ? 'O' : 'X';
+      setTimeout(() => {
+        initRound();
+      }, 1200);
     } else {
-      msg.textContent = "Tournament Draw";
+      setPlayAgainVisibility(false);
+      if (score1 > score2) {
+        msg.textContent = `${p1} wins the tournament!`;
+      } else if (score2 > score1) {
+        msg.textContent = `${p2} wins the tournament!`;
+      } else {
+        msg.textContent = "Tournament Draw";
+      }
     }
   }
 
@@ -597,32 +586,33 @@ function playAgain(){
     return;
   }
 
-  board = Array(9).fill(" ");
-  turn = starter;
-  msg.innerText = "";
-  enableBoard();
-  stopTimer();
-  resetTimerDisplay();
+  showOverlayCountdown("Starting...", 3, () => {
+    board = Array(9).fill(" ");
+    turn = starter;
+    msg.innerText = "";
+    enableBoard();
+    stopTimer();
+    resetTimerDisplay();
 
-  // In AI mode, only show/enable timer after Restart is pressed
-  if (mode === "ai") {
-    timerEnabled = true;
-    setTimerVisibility(true);
-    maybeStartOrResetMoveTimer();
-  } else {
-    timerEnabled = false;
-    setTimerVisibility(false);
-  }
+    if (mode === "ai") {
+      timerEnabled = true;
+      setTimerVisibility(true);
+      maybeStartOrResetMoveTimer();
+    } else {
+      timerEnabled = false;
+      setTimerVisibility(false);
+    }
 
-  draw();
+    draw();
 
-  if (vsAI && turn === aiSymbol) {
-    disableBoard();
-    setTimeout(() => {
-      aiMove();
-      enableBoard();
-    }, 500);
-  }
+    if (vsAI && turn === aiSymbol) {
+      disableBoard();
+      setTimeout(() => {
+        aiMove();
+        enableBoard();
+      }, 500);
+    }
+  });
 }
 
 function goBack(){
