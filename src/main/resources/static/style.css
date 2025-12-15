@@ -1,11 +1,21 @@
 * { box-sizing:border-box; }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   margin:0;
   font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   line-height:1.45;
   color: #f6f6f6;
   background: linear-gradient(180deg,#0b0b0b,#121212);
+  overflow-x:hidden;
 }
 
 h1 {
@@ -49,6 +59,19 @@ h1 {
   transform:translateY(-5px);
   box-shadow: 0 12px 35px rgba(255, 140, 0, 0.5);
   background:linear-gradient(135deg, #ff6b00 0%, #e55100 100%);
+}
+
+@media (hover: none) {
+  #main-options button:hover {
+    transform:none;
+    box-shadow: 0 8px 25px rgba(255, 140, 0, 0.35);
+  }
+
+  .cell:hover:not(.disabled) {
+    transform:none;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 140, 0, 0.35);
+  }
 }
 
 /* Setup panels */
@@ -772,6 +795,19 @@ h1 {
     gap:16px;
   }
 
+  #main-options {
+    flex-direction:column;
+    align-items:stretch;
+    gap:12px;
+    margin:40px 0;
+  }
+
+  #main-options button {
+    width:100%;
+    max-width:420px;
+    margin:0 auto;
+  }
+
   #scoreboardSidebar {
     min-width:100%;
     flex-direction:row;
@@ -801,8 +837,19 @@ h1 {
 
 @media (max-width:480px){
   h1 { font-size:1.5em; margin:14px 0; }
-  #main-options { gap:12px; margin:40px 0; }
-  #main-options button { padding:14px 28px; font-size:12px; }
+  #main-options {
+    flex-direction:column;
+    align-items:stretch;
+    gap:12px;
+    margin:40px 0;
+  }
+  #main-options button {
+    width:100%;
+    max-width:360px;
+    margin:0 auto;
+    padding:14px 28px;
+    font-size:12px;
+  }
   #playerHeader { gap:20px; font-size:15px; }
   #board { grid-template-columns:repeat(3, 75px); gap:8px; margin:18px 0; }
   .cell { width:75px; height:75px; font-size:30px; }

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Tic Tac Toe</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -37,7 +38,6 @@
     <div style="margin-top:8px;">
       <button onclick="startAIFromForm()">Start</button>
       <button onclick="closeAISetup()">Go Back</button>
-      <button id="resetScoreBtn" class="reset-btn" onclick="resetScores()" style="margin-top: 10px; display: block; width: 100%;">Reset Score</button>
     </div>
   </div>
 
@@ -50,10 +50,13 @@
       <div class="tournament-info">
         <strong>Tournament Rules:</strong>
         <ul>
-          <li>Each match has a 15-second timer per move</li>
+          <li>Timer starts only after the first move of a round</li>
           <li>If time runs out, the current player loses that match</li>
           <li>Each round starts with a 3-second countdown</li>
-          <li>Player with most wins after all rounds wins the tournament</li>
+          <li>Win: 2 points</li>
+          <li>Draw: 1 point each</li>
+          <li>Loss: 0 points</li>
+          <li>Player with most points wins the tournament</li>
         </ul>
       </div>
       <strong>Rounds:</strong><br><br>

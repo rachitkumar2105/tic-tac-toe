@@ -1,16 +1,15 @@
 services:
   - type: web
     name: tictactoe
-    env: java
+    env: docker
     region: singapore  # or choose a region closer to your users
     plan: free  # or 'starter' for production
-    build:
-      dockerfile: Dockerfile
+    dockerfilePath: Dockerfile
     envVars:
       - key: PORT
         value: 8080
     autoDeploy: true
-    healthCheckPath: /actuator/health  # Using Spring Boot Actuator for health checks
+    healthCheckPath: /api/health
     # Uncomment and configure if you need to scale up later
     # numInstances: 1
     # instanceSize: free  # or 'starter' for production

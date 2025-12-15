@@ -9,6 +9,7 @@ let starter = 'X';
 let aiLevel = "hard";
 let playerSymbol = 'X';  // Track player's symbol in AI mode
 let aiSymbol = 'O';     // Track AI's symbol
+let aiHumanIsX = true;
 
 const boardDiv = document.getElementById("board");
 const msg = document.getElementById("message");
@@ -18,6 +19,49 @@ const roundInfo = document.getElementById("roundInfo");
 const overlay = document.getElementById("overlay");
 const overlayText = document.getElementById("overlayText");
 const overlayCount = document.getElementById("overlayCount");
+
+let timerEnabled = false;
+let hasStartedMoveTimerThisRound = false;
+
+function setTimerVisibility(visible) {
+  const timerBox = document.getElementById("timerBox");
+  if (!timerBox) return;
+  if (visible) timerBox.classList.remove("hidden");
+  else timerBox.classList.add("hidden");
+}
+
+function resetTimerDisplay() {
+  timerDiv.textContent = "⏱️ 15";
+}
+
+function checkWin(b, sym) {
+  const w = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for (const c of w) {
+    if (b[c[0]] === sym && b[c[1]] === sym && b[c[2]] === sym) return true;
+  }
+  return false;
+}
+
+function isBoardFull(b) {
+  return b.every(c => c !== " ");
+}
+
+function getPlayerNameForSymbol(sym) {
+  if (mode === "ai") {
+    return (sym === playerSymbol) ? p1 : p2;
+  }
+  if (mode === "tournament") {
+    const p1sym = starter === 'X' ? 'X' : 'O';
+    const p2sym = starter === 'X' ? 'O' : 'X';
+    return (sym === p1sym) ? p1 : p2;
+  }
+  return sym === 'X' ? p1 : p2;
+}
+
+function maybeStartOrResetMoveTimer() {
+  if (!timerEnabled) return;
+  startTimer();
+}
 
 function openTournamentSetup(){
   hideAllSetups();
@@ -76,17 +120,12 @@ function startAIFromForm(){
   aiLevel = sel ? sel.value : "hard";
   mode = "ai";
   vsAI = true;
-  
-  // Alternate who starts first (X or O) in AI mode
-  if (starter === 'X') {
-    playerSymbol = 'X';
-    aiSymbol = 'O';
-    starter = 'O';  // Next game, O will start
-  } else {
-    playerSymbol = 'O';
-    aiSymbol = 'X';
-    starter = 'X';  // Next game, X will start
-  }
+
+  // X always starts in Tic-Tac-Toe. We only alternate whether the human is X or O.
+  playerSymbol = aiHumanIsX ? 'X' : 'O';
+  aiSymbol = (playerSymbol === 'X') ? 'O' : 'X';
+  aiHumanIsX = !aiHumanIsX;
+  starter = 'X';
   
   if (!Number.isFinite(score1)) { score1 = 0; score2 = 0; }
   closeAISetup();
@@ -118,6 +157,11 @@ function hideAllSetups(){
 function initRound(){
   board = [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '];
   turn = starter; // Use the current starter (X or O)
+  hasStartedMoveTimerThisRound = false;
+  timerEnabled = false;
+  setTimerVisibility(false);
+  stopTimer();
+  resetTimerDisplay();
   
   document.getElementById('game').classList.remove('hidden');
   document.getElementById('menu').classList.add('hidden');
@@ -127,7 +171,6 @@ function initRound(){
   // Show countdown before starting the round
   showOverlayCountdown(`Round ${currentRound}`, 3, () => {
     draw();
-    startTimer();
     updateScoreboardDisplay();
     updateRoundInfo();
     
@@ -185,9 +228,9 @@ function applyHorizontalProb(px, po){
     nameX = starter === 'X' ? p1 : p2;
     nameO = starter === 'X' ? p2 : p1;
   } else if (mode === "ai") {
-    // AI mode: p1 is human (X), p2 is AI (O)
-    nameX = p1;
-    nameO = p2;
+    // AI mode: map names to the actual X/O assignment
+    nameX = (playerSymbol === 'X') ? p1 : p2;
+    nameO = (playerSymbol === 'O') ? p1 : p2;
   } else if (mode === "pvp") {
     // PVP mode: p1 is X, p2 is O
     nameX = p1;
@@ -225,6 +268,9 @@ function updateScoreboardDisplay(){
     const p2sym = starter === 'X' ? 'O' : 'X';
     document.getElementById("p1Sym").textContent = `Symbol: ${p1sym}`;
     document.getElementById("p2Sym").textContent = `Symbol: ${p2sym}`;
+  } else if (mode === "ai") {
+    document.getElementById("p1Sym").textContent = `Symbol: ${playerSymbol}`;
+    document.getElementById("p2Sym").textContent = `Symbol: ${aiSymbol}`;
   } else {
     document.getElementById("p1Sym").textContent = "Symbol: X";
     document.getElementById("p2Sym").textContent = "Symbol: O";
@@ -276,7 +322,10 @@ function startTimer() {
   }, 15000);
 }
 
-function stopTimer(){ clearInterval(interval); }
+function stopTimer(){
+  if (interval) clearInterval(interval);
+  if (timeoutTimer) clearTimeout(timeoutTimer);
+}
 
 function draw(){
   boardDiv.innerHTML="";
@@ -292,19 +341,93 @@ function draw(){
 
 function move(i) {
   if (board[i] !== ' ' || (vsAI && turn !== playerSymbol)) return;
+
   board[i] = turn;
+
   draw();
-  check(turn);
-  
+  const ended = check(turn);
+  if (ended) return;
+
+  // Switch turn after a valid non-ending move
+  turn = (turn === 'X') ? 'O' : 'X';
+
+  if (mode === "tournament" && !hasStartedMoveTimerThisRound) {
+    hasStartedMoveTimerThisRound = true;
+    timerEnabled = true;
+    setTimerVisibility(true);
+    maybeStartOrResetMoveTimer();
+  } else if (timerEnabled) {
+    maybeStartOrResetMoveTimer();
+  }
+
+  draw();
+
   // If it's AI's turn after player move
-  if (vsAI && !checkWin(board, turn) && !isBoardFull(board)) {
+  if (vsAI && turn === aiSymbol && !checkWin(board, playerSymbol) && !checkWin(board, aiSymbol) && !isBoardFull(board)) {
     disableBoard();
-    // Small delay for better UX
     setTimeout(() => {
       aiMove();
       enableBoard();
     }, 500);
   }
+}
+
+function findRandomMove(b) {
+  const empty = [];
+  for (let i = 0; i < 9; i++) if (b[i] === ' ') empty.push(i);
+  if (empty.length === 0) return -1;
+  return empty[Math.floor(Math.random() * empty.length)];
+}
+
+function findWinningMove(b, sym) {
+  for (let i = 0; i < 9; i++) {
+    if (b[i] !== ' ') continue;
+    b[i] = sym;
+    const win = checkWin(b, sym);
+    b[i] = ' ';
+    if (win) return i;
+  }
+  return -1;
+}
+
+function minimax(b, current, maxSym, minSym) {
+  if (checkWin(b, maxSym)) return 10;
+  if (checkWin(b, minSym)) return -10;
+  if (isBoardFull(b)) return 0;
+
+  const isMax = current === maxSym;
+  let best = isMax ? -Infinity : Infinity;
+
+  for (let i = 0; i < 9; i++) {
+    if (b[i] !== ' ') continue;
+    b[i] = current;
+    const score = minimax(b, current === 'X' ? 'O' : 'X', maxSym, minSym);
+    b[i] = ' ';
+    best = isMax ? Math.max(best, score) : Math.min(best, score);
+  }
+
+  return best;
+}
+
+function findBestMove(b) {
+  const maxSym = aiSymbol;
+  const minSym = playerSymbol;
+
+  let bestScore = -Infinity;
+  let bestMove = -1;
+
+  for (let i = 0; i < 9; i++) {
+    if (b[i] !== ' ') continue;
+    b[i] = maxSym;
+    const score = minimax(b, maxSym === 'X' ? 'O' : 'X', maxSym, minSym);
+    b[i] = ' ';
+    if (score > bestScore) {
+      bestScore = score;
+      bestMove = i;
+    }
+  }
+
+  return bestMove;
 }
 
 function aiMove() {
@@ -327,9 +450,20 @@ function aiMove() {
   }
   
   if (move !== undefined && move !== -1) {
-    board[move] = turn; // Use current turn symbol (could be X or O)
+    board[move] = aiSymbol;
+
     draw();
-    check(turn);
+    const ended = check(aiSymbol);
+    if (ended) return;
+
+    // Switch back to player
+    turn = playerSymbol;
+
+    if (timerEnabled) {
+      maybeStartOrResetMoveTimer();
+    }
+
+    draw();
   }
 }
 
@@ -371,21 +505,33 @@ function handleRoundEnd(winnerSymbol){
   
   if (winnerSymbol === 'X') {
     if (mode === 'ai') {
-      if (playerSymbol === 'X') score1++;
-      else score2++;
+      if (playerSymbol === 'X') score1 += 2;
+      else score2 += 2;
+    } else if (mode === 'tournament') {
+      const p1sym = starter === 'X' ? 'X' : 'O';
+      if (p1sym === 'X') score1 += 2;
+      else score2 += 2;
     } else {
-      score1++;
+      score1 += 1;
     }
     msg.textContent = `${getPlayerNameForSymbol('X')} wins!`;
   } else if (winnerSymbol === 'O') {
     if (mode === 'ai') {
-      if (playerSymbol === 'O') score1++;
-      else score2++;
+      if (playerSymbol === 'O') score1 += 2;
+      else score2 += 2;
+    } else if (mode === 'tournament') {
+      const p1sym = starter === 'X' ? 'X' : 'O';
+      if (p1sym === 'O') score1 += 2;
+      else score2 += 2;
     } else {
-      score2++;
+      score2 += 1;
     }
     msg.textContent = `${getPlayerNameForSymbol('O')} wins!`;
   } else {
+    if (mode === 'tournament') {
+      score1 += 1;
+      score2 += 1;
+    }
     msg.textContent = "It's a draw!";
   }
   
@@ -405,10 +551,23 @@ function handleRoundEnd(winnerSymbol){
       });
     }, 2000);
   }
-  
+
+  if (mode === 'tournament' && currentRound >= totalRounds) {
+    setPlayAgainVisibility(false);
+    if (score1 > score2) {
+      msg.textContent = `${p1} wins the tournament!`;
+    } else if (score2 > score1) {
+      msg.textContent = `${p2} wins the tournament!`;
+    } else {
+      msg.textContent = "Tournament Draw";
+    }
+  }
+
   // Update score display and show play again button
   updateScoreboardDisplay();
-  setPlayAgainVisibility(true);
+  if (!(mode === 'tournament' && currentRound >= totalRounds)) {
+    setPlayAgainVisibility(true);
+  }
 }
 
 function setPlayAgainVisibility(visible){
@@ -435,18 +594,40 @@ function playAgain(){
   if (mode === "tournament"){
     if (currentRound > totalRounds) return;
     initRound();
+    return;
+  }
+
+  board = Array(9).fill(" ");
+  turn = starter;
+  msg.innerText = "";
+  enableBoard();
+  stopTimer();
+  resetTimerDisplay();
+
+  // In AI mode, only show/enable timer after Restart is pressed
+  if (mode === "ai") {
+    timerEnabled = true;
+    setTimerVisibility(true);
+    maybeStartOrResetMoveTimer();
   } else {
-    board = Array(9).fill(" ");
-    turn = mode === "ai" ? 'X' : 'X';
-    msg.innerText = "";
-    enableBoard();
-    draw();
-    startTimer();
+    timerEnabled = false;
+    setTimerVisibility(false);
+  }
+
+  draw();
+
+  if (vsAI && turn === aiSymbol) {
+    disableBoard();
+    setTimeout(() => {
+      aiMove();
+      enableBoard();
+    }, 500);
   }
 }
 
 function goBack(){
   stopTimer();
+  setTimerVisibility(false);
   document.getElementById("game").classList.add("hidden");
   document.getElementById("menu").classList.remove("hidden");
   score1 = score2 = 0;
