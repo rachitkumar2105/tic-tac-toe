@@ -153,13 +153,44 @@ public class GameController {
         return -1;
     }
 
+    // Check if the board has a winner
+    private boolean checkWin(char[] board, char player) {
+        // Check rows
+        for (int i = 0; i < 9; i += 3) {
+            if (board[i] == player && board[i+1] == player && board[i+2] == player) {
+                return true;
+            }
+        }
+        // Check columns
+        for (int i = 0; i < 3; i++) {
+            if (board[i] == player && board[i+3] == player && board[i+6] == player) {
+                return true;
+            }
+        }
+        // Check diagonals
+        if (board[0] == player && board[4] == player && board[8] == player) {
+            return true;
+        }
+        return board[2] == player && board[4] == player && board[6] == player;
+    }
+
+    // Check if the board is full
+    private boolean isBoardFull(char[] board) {
+        for (char c : board) {
+            if (c == ' ') {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @PostMapping("/tournament/result")
-    public Map<String,Object> tournamentResult(@RequestBody Map<String,Integer> payload) {
+    public Map<String,Object> tournamentResult(@RequestBody Map<String,Object> payload) {
         // payload expects keys "score1" and "score2" and optional "p1" and "p2" names
-        int s1 = payload.getOrDefault("score1", 0);
-        int s2 = payload.getOrDefault("score2", 0);
-        String p1name = payload.getOrDefault("p1", 0) instanceof Integer ? "Player 1" : (String)payload.getOrDefault("p1", "Player 1");
-        String p2name = payload.getOrDefault("p2", 0) instanceof Integer ? "Player 2" : (String)payload.getOrDefault("p2", "Player 2");
+        int s1 = payload.get("score1") instanceof Integer ? (int)payload.get("score1") : 0;
+        int s2 = payload.get("score2") instanceof Integer ? (int)payload.get("score2") : 0;
+        String p1name = payload.get("p1") != null ? payload.get("p1").toString() : "Player 1";
+        String p2name = payload.get("p2") != null ? payload.get("p2").toString() : "Player 2";
 
         Map<String,Object> out = new HashMap<>();
         if (s1 > s2) {
